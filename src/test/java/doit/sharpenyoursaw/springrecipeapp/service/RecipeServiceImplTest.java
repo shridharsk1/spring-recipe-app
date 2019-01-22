@@ -1,11 +1,13 @@
 package doit.sharpenyoursaw.springrecipeapp.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.Before;
@@ -22,6 +24,8 @@ public class RecipeServiceImplTest {
 
 	@Mock
 	RecipeRepository recipeRepository;
+
+	Long ID = 1L;
 
 	@Before
 	public void setUp() throws Exception {
@@ -41,6 +45,20 @@ public class RecipeServiceImplTest {
 		recipies = recipeServiceImpl.getRecipes();
 		assertEquals(1, recipies.size());
 		verify(recipeRepository, times(1)).findAll();
+	}
+
+	@Test
+	public void getRecipeByIdTest() {
+		Recipe recipe = new Recipe();
+		recipe.setId(ID);
+		Optional<Recipe> recipeOptional = Optional.of(recipe);
+
+		when(recipeRepository.findById(anyLong())).thenReturn(recipeOptional);
+
+		Recipe recipeById = recipeServiceImpl.findRecipeById(ID);
+
+		assertEquals(ID, recipeById.getId());
+		verify(recipeRepository, times(1)).findById(anyLong());
 	}
 
 }
