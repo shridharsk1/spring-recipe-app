@@ -1,15 +1,17 @@
 package doit.sharpenyoursaw.springrecipeapp.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import doit.sharpenyoursaw.springrecipeapp.commands.RecipeCommand;
+import doit.sharpenyoursaw.springrecipeapp.converters.RecipeCommandToRecipe;
+import doit.sharpenyoursaw.springrecipeapp.converters.RecipeToRecipeCommand;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -20,45 +22,88 @@ import doit.sharpenyoursaw.springrecipeapp.repositories.RecipeRepository;
 
 public class RecipeServiceImplTest {
 
-	RecipeServiceImpl recipeServiceImpl;
+	RecipeServiceImpl recipeService;
 
 	@Mock
 	RecipeRepository recipeRepository;
 
-	Long ID = 1L;
+	@Mock
+	RecipeToRecipeCommand recipeToRecipeCommand;
+
+	@Mock
+	RecipeCommandToRecipe recipeCommandToRecipe;
 
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
-		recipeServiceImpl = new RecipeServiceImpl(recipeRepository);
+
+		recipeService = new RecipeServiceImpl(recipeRepository, recipeToRecipeCommand, recipeCommandToRecipe );
 	}
 
 	@Test
-	public void testFindAll() {
-		Set<Recipe> recipies = new HashSet<>();
-
+	public void getRecipeByIdTest() throws Exception {
 		Recipe recipe = new Recipe();
-		Set<Recipe> recipeData = new HashSet<>();
-		recipeData.add(recipe);
-
-		when(recipeRepository.findAll()).thenReturn(recipeData);
-		recipies = recipeServiceImpl.getRecipes();
-		assertEquals(1, recipies.size());
-		verify(recipeRepository, times(1)).findAll();
-	}
-
-	@Test
-	public void getRecipeByIdTest() {
-		Recipe recipe = new Recipe();
-		recipe.setId(ID);
+		recipe.setId(1L);
 		Optional<Recipe> recipeOptional = Optional.of(recipe);
 
 		when(recipeRepository.findById(anyLong())).thenReturn(recipeOptional);
 
-		Recipe recipeById = recipeServiceImpl.findRecipeById(ID);
+		Recipe recipeReturned = recipeService.findRecipeById(1L);
 
-		assertEquals(ID, recipeById.getId());
+		assertNotNull("Null recipe returned", recipeReturned);
 		verify(recipeRepository, times(1)).findById(anyLong());
+		verify(recipeRepository, never()).findAll();
+	}
+
+	@Test
+	public void getRecipeCommandByIdTest() throws Exception {
+		Recipe recipe = new Recipe();
+		recipe.setId(1L);
+		Optional<Recipe> recipeOptional = Optional.of(recipe);
+
+		when(recipeRepository.findById(anyLong())).thenReturn(recipeOptional);
+
+		RecipeCommand recipeCommand = new RecipeCommand();
+		recipeCommand.setId(1L);
+
+		when(recipeToRecipeCommand.convert(any())).thenReturn(recipeCommand);
+
+		RecipeCommand commandById = recipeService.findRecipeCommandById(1L);
+
+		assertNotNull("Null recipe returned", commandById);
+		verify(recipeRepository, times(1)).findById(anyLong());
+		verify(recipeRepository, never()).findAll();
+	}
+
+	@Test
+	public void getRecipesTest() throws Exception {
+
+		Recipe recipe = new Recipe();
+		HashSet receipesData = new HashSet();
+		receipesData.add(recipe);
+
+		when(recipeService.getRecipes()).thenReturn(receipesData);
+
+		Set<Recipe> recipes = recipeService.getRecipes();
+
+		assertEquals(recipes.size(), 1);
+		verify(recipeRepository, times(1)).findAll();
+		verify(recipeRepository, never()).findById(anyLong());
+	}
+
+	@Test
+	public void testDeleteById() throws Exception {
+
+		//given
+		Long idToDelete = Long.valueOf(2L);
+
+		//when
+		recipeService.deleteById(idToDelete);
+
+		//no 'when', since method has void return type
+
+		//then
+		verify(recipeRepository, times(1)).deleteById(anyLong());
 	}
 
 }
